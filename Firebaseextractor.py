@@ -17,8 +17,7 @@ def run_web_server():
 # Background Thread me Web Server Start Karein
 threading.Thread(target=run_web_server, daemon=True).start()
 
-# Aapka Normal/Safe Code Yahan Aayega
-print("Main Script Started Safely...")import requests
+# Aapka Normal/Safe Code Yahan Aayegaprint("Main Script Started Safely...")import requests
 import re
 import urllib.parse
 import time
