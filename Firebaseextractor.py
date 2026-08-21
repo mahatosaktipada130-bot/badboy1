@@ -1,8 +1,17 @@
-import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import base64
+import os
+import re
+import tempfile
 import threading
+import time
+import urllib.parse
+import zipfile
+import requests
 
-# Web Server Dummy Port Bind
+# ═══════════════════════════════════════════════════════════════
+# WEB SERVER FOR PORT BINDING (RENDER / KOYEB COMPATIBILITY)
+# ═══════════════════════════════════════════════════════════════
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -14,22 +23,13 @@ def run_web_server():
     server = HTTPServer(("0.0.0.0", port), SimpleHandler)
     server.serve_forever()
 
-# Background Thread me Web Server Start Karein
+# Direct thread start
 threading.Thread(target=run_web_server, daemon=True).start()
-
-# Aapka Normal/Safe Code Yahan Aayegaprint("Main Script Started Safely...")import requests
-import re
-import urllib.parse
-import time
-import base64
-import os
-import tempfile
-import zipfile
 
 # ═══════════════════════════════════════════════════════════════
 # TELEGRAM BOT CONFIGURATION
 # ═══════════════════════════════════════════════════════════════
-TG_TOKEN = "8640283878:AAEGSBnhIbwmh5ImyWNOQ4RDM6-MxGCrfc8"
+TG_TOKEN = os.environ.get("TG_TOKEN", "8640283878:AAEGSBnhIbwmh5ImyWNOQ4RDM6-MxGCrfc8")
 BOT_USERNAME = "ecfirebasebot"
 TG_GATEWAY = f"https://api.telegram.org/bot{TG_TOKEN}"
 
@@ -61,7 +61,7 @@ def extract_urls_from_binary(data_bytes: bytes) -> set:
                     d = "https://" + d
                 if "your-project" not in d:
                     found.add(d)
-        except:
+        except Exception:
             pass
     return found
 
@@ -73,7 +73,7 @@ def extract_firebase_from_apk(file_path: str) -> str:
                 try:
                     file_data = apk_zip.read(filename)
                     found_databases.update(extract_urls_from_binary(file_data))
-                except:
+                except Exception:
                     pass
         
         if found_databases:
@@ -84,7 +84,7 @@ def extract_firebase_from_apk(file_path: str) -> str:
         else:
             return "⚠️ <b>Deep Scan Result:</b> No Firebase database URL could be resolved from this APK."
     except Exception as e:
-            return f"❌ <b>Error processing APK:</b> <code>{str(e)}</code>"
+        return f"❌ <b>Error processing APK:</b> <code>{str(e)}</code>"
 
 def extract_firebase_from_url(target_url: str) -> str:
     headers = {
@@ -104,7 +104,7 @@ def extract_firebase_from_url(target_url: str) -> str:
                     padding = '=' * (-len(val) % 4)
                     dec = base64.b64decode(val + padding).decode('utf-8', errors='ignore')
                     found_databases.update(extract_urls_from_binary(dec.encode()))
-                except:
+                except Exception:
                     pass
                 found_databases.update(extract_urls_from_binary(val.encode()))
 
@@ -121,7 +121,7 @@ def extract_firebase_from_url(target_url: str) -> str:
             try:
                 js_resp = requests.get(js_url, headers=headers, timeout=10)
                 found_databases.update(extract_urls_from_binary(js_resp.content))
-            except:
+            except Exception:
                 pass
                 
         if found_databases:
@@ -146,7 +146,7 @@ def download_telegram_file(file_id: str) -> str:
         with open(temp_apk, "wb") as f:
             f.write(file_resp.content)
         return temp_apk
-    except:
+    except Exception:
         return None
 
 def run_bot_polling():
@@ -173,8 +173,10 @@ def run_bot_polling():
                                 if local_apk:
                                     scan_res = extract_firebase_from_apk(local_apk)
                                     send_message(chat_id, scan_res)
-                                    try: os.remove(local_apk)
-                                    except: pass
+                                    try: 
+                                        os.remove(local_apk)
+                                    except Exception: 
+                                        pass
                                 else:
                                     send_message(chat_id, "❌ Failed to download APK.")
                             else:
@@ -193,3 +195,4 @@ def run_bot_polling():
 
 if __name__ == "__main__":
     run_bot_polling()
+    
